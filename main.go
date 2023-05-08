@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
+	"os"
+	"os/exec"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/charmbracelet/glamour"
@@ -11,12 +12,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var NoPager bool
+
 func main() {
 	rootCmd := &cobra.Command{
 		Use:  "rdr",
 		Run:  rootCmdHandler,
 		Args: cobra.ExactArgs(1),
 	}
+
+	rootCmd.Flags().BoolVar(&NoPager, "no-pager", false, "Don't pipe output to a pager")
 
 	err := rootCmd.Execute()
 	if err != nil {
@@ -43,5 +48,25 @@ func rootCmdHandler(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	fmt.Print(out)
+	if NoPager {
+		os.Stdout.WriteString(out)
+		return
+	}
+
+	f, err := os.CreateTemp("", `rdr-page-*`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	name := f.Name()
+	_, err = f.WriteString(out)
+	defer f.Close()
+	defer os.Remove(name)
+	if err != nil {
+		log.Fatal(err)
+	}
+	execCmd := exec.Command("less", "-R", name)
+	execCmd.Stdout = os.Stdout
+	execCmd.Stdin = os.Stdin
+	execCmd.Stderr = os.Stderr
+	execCmd.Run()
 }
