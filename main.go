@@ -13,7 +13,7 @@ import (
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:  "read",
+		Use:  "rdr",
 		Run:  rootCmdHandler,
 		Args: cobra.ExactArgs(1),
 	}
