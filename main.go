@@ -21,7 +21,7 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:  "rdr [url]",
 		Run:  rootCmdHandler,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MaximumNArgs(1),
 	}
 
 	rootCmd.Flags().BoolVar(&NoPager, "no-pager", false, "Don't pipe output to a pager")
@@ -31,11 +31,24 @@ func main() {
 	err := rootCmd.Execute()
 	if err != nil {
 		log.Fatalln(err)
+		os.Exit(1)
 	}
 }
 
 func rootCmdHandler(cmd *cobra.Command, args []string) {
-	article, err := readability.FromURL(args[0], 30*time.Second)
+	var article readability.Article
+	var err error
+
+	if len(args) > 0 && args[0] != "-" {
+		article, err = readability.FromURL(args[0], 30*time.Second)
+	} else {
+		var inputReader io.Reader = cmd.InOrStdin()
+		url, err1 := url.Parse("https://example.com")
+		if err1 != nil {
+			log.Fatalf("failed to parse url: %v", err1)
+		}
+		article, err = readability.FromReader(inputReader, url)
+	}
 	if err != nil {
 		log.Fatalln(err)
 	}
