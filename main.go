@@ -56,7 +56,7 @@ func rootCmdHandler(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	out, err := glamour.Render(markdown, "light")
+	out, err := glamour.RenderWithEnvironmentConfig(markdown)
 
 	if err != nil {
 		log.Fatal(err)
