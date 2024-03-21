@@ -7,21 +7,23 @@ import (
 	"os/exec"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/charmbracelet/glamour"
 	readability "github.com/go-shiori/go-readability"
 	"github.com/spf13/cobra"
 )
 
-var NoPager bool
+var NoPager, NoLinks bool
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:  "rdr",
+		Use:  "rdr [url]",
 		Run:  rootCmdHandler,
 		Args: cobra.ExactArgs(1),
 	}
 
 	rootCmd.Flags().BoolVar(&NoPager, "no-pager", false, "Don't pipe output to a pager")
+	rootCmd.Flags().BoolVar(&NoLinks, "no-links", false, "Don't display any links")
 
 	err := rootCmd.Execute()
 	if err != nil {
@@ -36,6 +38,18 @@ func rootCmdHandler(cmd *cobra.Command, args []string) {
 	}
 
 	converter := md.NewConverter("", true, nil)
+	converter.Remove("figure")
+
+	if NoLinks {
+		converter.AddRules(
+			md.Rule{
+				Filter: []string{"a"},
+				Replacement: func(content string, selec *goquery.Selection, opt *md.Options) *string {
+					return md.String(content)
+				},
+			},
+		)
+	}
 
 	markdown, err := converter.ConvertString(article.Content)
 	if err != nil {
