@@ -1,10 +1,12 @@
 package main
 
 import (
+	"io"
 	"log"
-	"time"
+	"net/url"
 	"os"
 	"os/exec"
+	"time"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/PuerkitoBio/goquery"
@@ -13,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var NoPager, NoLinks bool
+var NoPager, NoLinks, Raw bool
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -24,6 +26,7 @@ func main() {
 
 	rootCmd.Flags().BoolVar(&NoPager, "no-pager", false, "Don't pipe output to a pager")
 	rootCmd.Flags().BoolVar(&NoLinks, "no-links", false, "Don't display any links")
+	rootCmd.Flags().BoolVar(&Raw, "raw", false, "Just raw")
 
 	err := rootCmd.Execute()
 	if err != nil {
@@ -54,6 +57,11 @@ func rootCmdHandler(cmd *cobra.Command, args []string) {
 	markdown, err := converter.ConvertString(article.Content)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if Raw {
+		os.Stdout.WriteString(markdown)
+		return
 	}
 
 	out, err := glamour.RenderWithEnvironmentConfig(markdown)
