@@ -70,6 +70,13 @@ func rootCmdHandler(cmd *cobra.Command, args []string) {
 	if NoLinks {
 		converter.AddRules(
 			md.Rule{
+				Filter: []string{"img"},
+				Replacement: func(content string, selec *goquery.Selection, opt *md.Options) *string {
+					selec.RemoveAttr("src")
+					return nil
+				},
+			},
+			md.Rule{
 				Filter: []string{"a"},
 				Replacement: func(content string, selec *goquery.Selection, opt *md.Options) *string {
 					return md.String(content)
