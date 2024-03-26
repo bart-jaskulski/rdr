@@ -35,19 +35,30 @@ func main() {
 	}
 }
 
+func defaultUrl() *url.URL {
+	url, _ := url.ParseRequestURI("https://example.com")
+	return url
+}
+
 func rootCmdHandler(cmd *cobra.Command, args []string) {
 	var article readability.Article
 	var err error
 
 	if len(args) > 0 && args[0] != "-" {
-		article, err = readability.FromURL(args[0], 30*time.Second)
+		url, err1 := url.ParseRequestURI(args[0])
+		if err1 != nil {
+			fileReader, err := os.OpenFile(args[0], os.O_RDONLY, 0)
+			defer fileReader.Close()
+			if err != nil {
+				log.Fatalf("failed to open file: %v", err)
+			}
+			article, err = readability.FromReader(fileReader, defaultUrl())
+		} else {
+			article, err = readability.FromURL(url.String(), 30*time.Second)
+		}
 	} else {
 		var inputReader io.Reader = cmd.InOrStdin()
-		url, err1 := url.Parse("https://example.com")
-		if err1 != nil {
-			log.Fatalf("failed to parse url: %v", err1)
-		}
-		article, err = readability.FromReader(inputReader, url)
+		article, err = readability.FromReader(inputReader, defaultUrl())
 	}
 	if err != nil {
 		log.Fatalln(err)
